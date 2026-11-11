@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Tu sistema: IA + Notion + Drive</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap">
+<style>
+/* Layout: una columna de lecciones tipo recortes de papel; la lección activa se abre con su video y su ejercicio */
+:root{
+  --papel:#F6E7D2; --hoja:#FFFFFF; --tinta:#3B1F1A; --tinta-2:#6B4A40; --linea:#E3D2BC;
+  --coral:#E8664A; --mostaza:#E9B23C; --verde:#2F8F83; --rosa:#F2A6B5; --verde-claro:#D7ECE8;
+  --display:"Fredoka","Nunito",system-ui,sans-serif; --texto:"Nunito",system-ui,sans-serif;
+  color-scheme:light;
+}
+body{background:var(--papel);color:var(--tinta);font-family:var(--texto);font-size:16px;line-height:1.55}
+.wrap{max-width:820px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-direction:column;gap:10px}
+.kicker{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--verde)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(30px,6vw,44px);line-height:1.08;margin:0;text-wrap:balance}
+.intro{margin:0;color:var(--tinta-2);max-width:60ch}
+.trio{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--display);font-weight:500;font-size:14px;padding:4px 14px;border-radius:999px;display:inline-block}
+.c-coral{background:var(--coral);color:var(--tinta)} .c-mostaza{background:var(--mostaza);color:var(--tinta)} .c-verde{background:var(--verde);color:var(--papel)} .c-rosa{background:var(--rosa);color:#6E2A3B}
+.progreso{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:500}
+.barra{flex:1;height:12px;background:var(--hoja);border-radius:999px;overflow:hidden;max-width:320px}
+.barra span{display:block;height:100%;background:var(--verde);width:0;transition:width .5s}
+.lista{display:flex;flex-direction:column;gap:14px}
+.leccion{background:var(--hoja);transform:rotate(var(--r,0deg));transition:transform .2s}
+.leccion:nth-child(odd){--r:-.35deg} .leccion:nth-child(even){--r:.35deg}
+.leccion.abierta{--r:0deg}
+.cab{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:56px 1fr auto;gap:14px;align-items:center;padding:14px 16px;cursor:pointer}
+.cab:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.num{width:56px;height:56px;display:grid;place-items:center;font-family:var(--display);font-weight:600;font-size:26px;background:var(--papel)}
+.leccion[data-estado="hecha"] .num{background:var(--verde);color:var(--papel)}
+.leccion[data-estado="actual"] .num{background:var(--coral)}
+.tit{min-width:0}
+.tit b{display:block;font-family:var(--display);font-weight:600;font-size:20px;line-height:1.2}
+.tit small{display:block;color:var(--tinta-2);font-size:14px}
+.estado{font-family:var(--display);font-weight:500;font-size:13px;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.leccion[data-estado="bloqueada"]{background:#EFE0CA}
+.leccion[data-estado="bloqueada"] .cab{cursor:not-allowed}
+.leccion[data-estado="bloqueada"] .tit b,.leccion[data-estado="bloqueada"] .tit small{color:#9C8A7C}
+.cuerpo{padding:0 16px 18px;display:flex;flex-direction:column;gap:14px}
+video{width:100%;max-width:100%;aspect-ratio:16/9;background:var(--papel);display:block}
+.ejercicio{background:var(--verde-claro);padding:16px;display:flex;flex-direction:column;gap:10px}
+.ejercicio h3{margin:0;font-family:var(--display);font-weight:600;font-size:17px;color:#1F4F48}
+.ejercicio p{margin:0}
+.items{display:flex;flex-direction:column;gap:10px}
+.item{background:var(--hoja);padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.item span{min-width:0;flex:1 1 220px}
+.ops{display:flex;gap:6px;flex-wrap:wrap}
+.ops button,.btn{font-family:var(--display);font-weight:500;font-size:14px;border:0;padding:7px 12px;border-radius:999px;cursor:pointer;background:var(--papel);color:var(--tinta)}
+.ops button:focus-visible,.btn:focus-visible,.check input:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.ops button.ok{background:var(--verde);color:var(--papel)} .ops button.no{background:var(--rosa);color:#6E2A3B}
+.fb{flex-basis:100%;font-size:14px;color:var(--tinta-2)}
+.prompt{background:var(--hoja);padding:12px 14px;font-size:15px;white-space:pre-wrap;border-left:0;margin:0}
+.fila{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn.prim{background:var(--coral)}
+.check{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--verde);margin-top:2px;flex:none}
+.nota{font-size:13px;color:#1F4F48}
+.siguiente{align-self:flex-start}
+footer{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;color:var(--tinta-2);font-size:13px}
+footer button{all:unset;cursor:pointer;text-decoration:underline}
+@media (prefers-reduced-motion:reduce){.leccion,.barra span{transition:none}.leccion{transform:none}}
+@media (max-width:520px){.cab{grid-template-columns:44px 1fr;}.num{width:44px;height:44px;font-size:21px}.estado{grid-column:2;justify-self:start}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Mini curso · 6 videos</div>
+    <h1>Tu sistema: IA + Notion + Drive</h1>
+    <p class="intro">Tres piezas, cada una con su trabajo: tu asistente busca y acomoda, el archivero guarda lo que vas a necesitar después y la bodega cuida los archivos. Ve los videos en orden; cada uno abre el siguiente.</p>
+    <div class="trio"><span class="chip c-coral">Asistente · ChatGPT</span><span class="chip c-mostaza">Archivero · Notion</span><span class="chip c-verde">Bodega · Drive</span></div>
+    <div class="progreso"><div class="barra" aria-hidden="true"><span id="barra"></span></div><span id="cuenta">0 de 6 vistos</span></div>
+  </header>
+
+  <div class="lista" id="lista"></div>
+
+  <footer>
+    <span>El avance se guarda en este navegador.</span>
+    <button type="button" id="reiniciar">Empezar de nuevo</button>
+  </footer>
+</div>
+
+<script>
+const LECCIONES = [
+  { t:"Introducción", s:"El mapa: asistente, archivero y bodega", src:"videos/0.mp4", d:"2:33",
+    ej:{ tipo:"clasificar", titulo:"¿Dónde va cada cosa?",
+      texto:"Toca a qué pieza le toca cada cosa.",
+      items:[
+        ["El teléfono del pediatra","Archivero","Es un dato que vas a buscar después: va en una ficha del Directorio."],
+        ["El PDF completo de un paper","Bodega","El archivo vive en Drive; en Notion queda su ficha con el link."],
+        ["Una idea a medias para un texto","Asistente","Primero se platica con la asistente. Cuando tenga forma, se guarda en el archivero."],
+        ["Las fotos del taller de Antonia Diluvio","Bodega","Fotos, audios y videos van en la carpeta del proyecto en Drive."],
+        ["Los pendientes de esta semana","Archivero","Viven en un cajón de tareas, con fecha y estado."]
+      ]}},
+  { t:"Tu asistente", s:"Cómo platicar con ChatGPT", src:"videos/1.mp4", d:"2:26",
+    ej:{ tipo:"prompt", titulo:"Pruébalo ahora",
+      texto:"Abre un chat nuevo y pega esto, cambiando lo que está entre corchetes:",
+      prompt:"Soy artista e investigadora. Estoy preparando [qué estás haciendo]. Ayúdame a [qué quieres], con un tono [cómo lo quieres].",
+      check:"Lo probé con un tema mío" }},
+  { t:"El archivero", s:"Notion por dentro", src:"videos/2.mp4", d:"2:32",
+    ej:{ tipo:"lista", titulo:"Date una vuelta por Notion",
+      texto:"Abre Notion y encuentra estas tres cosas:",
+      items:["El Directorio, dentro de Familia","La Biblioteca de investigación, dentro de Blobworks","Una vista distinta (tablero o calendario) en Tareas de familia"] }},
+  { t:"La bodega", s:"Dónde viven tus archivos", src:"videos/3.mp4", d:"2:17",
+    ej:{ tipo:"lista", titulo:"Tu primer archivo bien guardado",
+      texto:"Con un archivo real:",
+      items:["Súbelo a Drive, a la carpeta de su proyecto","Ponle nombre con año y mes al inicio, por ejemplo «2026-11 Taller»","Copia su link para registrarlo en Notion"] }},
+  { t:"Todo en acción", s:"Cómo pedirle las cosas", src:"videos/4.mp4", d:"2:08",
+    ej:{ tipo:"prompt", titulo:"La fórmula: qué, dónde y detalles",
+      texto:"Pídele a tu asistente que guarde algo real con esta fórmula y lee su confirmación:",
+      prompt:"Guarda en Notion, en [Familia / Blobworks / mi espacio] › [cajón]: [qué es]. Detalles: [fechas, teléfonos, links].",
+      check:"Lo guardé y revisé la confirmación",
+      nota:"Funciona cuando tu ChatGPT ya está conectado a Notion." }},
+  { t:"Tu propio proyecto", s:"Dos caminos para cualquier tema", src:"videos/5.mp4", d:"2:07",
+    ej:{ tipo:"prompt", titulo:"Arranca tu primer proyecto",
+      texto:"Camino A: empieza platicando. Pega esto en un chat nuevo:",
+      prompt:"Quiero armar un proyecto sobre [tema]. Voy a juntar [lecturas, ideas, pendientes…]. Es [compartido, en Blobworks / solo mío, en mi espacio]. Propónme la estructura: la página, los cajones con sus casillas y el nombre de su carpeta en Drive. No crees nada hasta que te diga «sí, créalo».",
+      check:"Ya tengo mi primer proyecto",
+      nota:"Al final, abre un proyecto en ChatGPT con el mismo nombre y pídele sus instrucciones." }}
+];
+
+const KEY = "tu-sistema-v1";
+let st = { vistos:[], checks:{}, abierta:0 };
+try { const g = JSON.parse(localStorage.getItem(KEY) || "null"); if (g && Array.isArray(g.vistos)) st = Object.assign(st, g); } catch(e) {}
+function guardar(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e) {} }
+
+const desbloqueadas = () => Math.min(LECCIONES.length - 1, st.vistos.length ? Math.max(...st.vistos) + 1 : 0);
+function estado(i){ if (st.vistos.includes(i)) return "hecha"; return i <= desbloqueadas() ? "actual" : "bloqueada"; }
+
+function el(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  for (const k in (attrs||{})) { if (attrs[k] == null) continue; if (k === "class") e.className = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else e.setAttribute(k, attrs[k]); }
+  for (const c of kids) if (c != null) e.append(c);
+  return e;
+}
+
+function ejercicio(i){
+  const ej = LECCIONES[i].ej;
+  const box = el("div", {class:"ejercicio"}, el("h3", null, ej.titulo), el("p", null, ej.texto));
+  if (ej.tipo === "clasificar") {
+    const items = el("div", {class:"items"});
+    ej.items.forEach(([txt, bueno, porque], k) => {
+      const fb = el("div", {class:"fb", "aria-live":"polite"});
+      const ops = el("div", {class:"ops"});
+      ["Asistente","Archivero","Bodega"].forEach(op => {
+        ops.append(el("button", {type:"button", onclick:(ev) => {
+          ops.querySelectorAll("button").forEach(b => b.className = "");
+          const ok = op === bueno;
+          ev.currentTarget.className = ok ? "ok" : "no";
+          fb.textContent = ok ? "¡Eso! " + porque : "Casi. Va en " + bueno.toLowerCase() + ". " + porque;
+        }}, op));
+      });
+      items.append(el("div", {class:"item"}, el("span", null, txt), ops, fb));
+    });
+    box.append(items);
+  }
+  if (ej.tipo === "prompt") {
+    const pre = el("p", {class:"prompt", id:"prompt-"+i}, ej.prompt);
+    const msg = el("span", {class:"nota", "aria-live":"polite"});
+    const copiar = el("button", {type:"button", class:"btn prim", onclick: async () => {
+      try { await navigator.clipboard.writeText(ej.prompt); msg.textContent = "Copiado"; }
+      catch(e) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); msg.textContent = "Texto seleccionado: cópialo con tu teclado"; }
+    }}, "Copiar");
+    box.append(pre, el("div", {class:"fila"}, copiar, msg));
+    if (ej.nota) box.append(el("p", {class:"nota"}, ej.nota));
+    box.append(caja(i, 0, ej.check));
+  }
+  if (ej.tipo === "lista") ej.items.forEach((t, k) => box.append(caja(i, k, t)));
+  return box;
+}
+
+function caja(i, k, texto){
+  const id = "c-" + i + "-" + k;
+  const inp = el("input", {type:"checkbox", id, onchange:(e) => { st.checks[id] = e.target.checked; guardar(); }});
+  inp.checked = !!st.checks[id];
+  return el("label", {class:"check", for:id}, inp, el("span", null, texto));
+}
+
+const lista = document.getElementById("lista");
+function pintar(){
+  lista.textContent = "";
+  LECCIONES.forEach((L, i) => {
+    const e = estado(i), abierta = st.abierta === i && e !== "bloqueada";
+    const etiqueta = e === "hecha" ? el("span", {class:"estado c-verde"}, "Visto ✓") : e === "actual" ? el("span", {class:"estado c-coral"}, "Toca ver") : el("span", {class:"estado", style:"background:#E3D2BC;color:#6B4A40"}, "Bloqueado");
+    const cab = el("button", {type:"button", class:"cab", "aria-expanded": String(abierta), "aria-disabled": String(e === "bloqueada"),
+      onclick: () => { if (e === "bloqueada") return; st.abierta = abierta ? -1 : i; guardar(); pintar(); }},
+      el("span", {class:"num", "aria-hidden":"true"}, String(i)),
+      el("span", {class:"tit"}, el("b", null, L.t), el("small", null, L.s + " · " + L.d)),
+      etiqueta);
+    const sec = el("section", {class:"leccion" + (abierta ? " abierta" : ""), "data-estado": e, "aria-label": "Video " + i + ": " + L.t}, cab);
+    if (abierta) {
+      const v = el("video", {controls:"", playsinline:"", preload:"metadata", src:L.src});
+      let marcado = false;
+      const terminar = () => { if (marcado) return; marcado = true; if (!st.vistos.includes(i)) { st.vistos.push(i); guardar(); } actualizar(sec, i); };
+      v.addEventListener("ended", terminar);
+      v.addEventListener("timeupdate", () => { if (v.duration && v.currentTime / v.duration > 0.93) terminar(); });
+      const cuerpo = el("div", {class:"cuerpo"}, v, ejercicio(i));
+      if (i < LECCIONES.length - 1) cuerpo.append(el("button", {type:"button", class:"btn prim siguiente", hidden: st.vistos.includes(i) ? null : "", id:"sig-"+i,
+        onclick: () => { st.abierta = i + 1; guardar(); pintar(); document.querySelectorAll(".leccion")[i+1].scrollIntoView({behavior:"smooth", block:"start"}); }}, "Siguiente video →"));
+      else cuerpo.append(el("p", {class:"nota", id:"fin", hidden: st.vistos.includes(i) ? null : ""}, "¡Terminaste el curso! Cada cosa en su lugar."));
+      sec.append(cuerpo);
+    }
+    lista.append(sec);
+  });
+  const n = st.vistos.length;
+  document.getElementById("barra").style.width = (n / LECCIONES.length * 100) + "%";
+  document.getElementById("cuenta").textContent = n + " de " + LECCIONES.length + " vistos";
+}
+
+function actualizar(sec, i){
+  sec.dataset.estado = "hecha";
+  const et = sec.querySelector(".estado"); et.className = "estado c-verde"; et.textContent = "Visto ✓";
+  const sig = document.getElementById("sig-" + i) || document.getElementById("fin"); if (sig) sig.hidden = false;
+  const sigSec = document.querySelectorAll(".leccion")[i+1];
+  if (sigSec && sigSec.dataset.estado === "bloqueada") {
+    sigSec.dataset.estado = "actual";
+    const e2 = sigSec.querySelector(".estado"); e2.className = "estado c-coral"; e2.style.cssText = ""; e2.textContent = "Toca ver";
+    const b = sigSec.querySelector(".cab"); b.setAttribute("aria-disabled","false");
+    b.onclick = null; b.addEventListener("click", () => { st.abierta = i + 1; guardar(); pintar(); });
+  }
+  const n = st.vistos.length;
+  document.getElementById("barra").style.width = (n / LECCIONES.length * 100) + "%";
+  document.getElementById("cuenta").textContent = n + " de " + LECCIONES.length + " vistos";
+}
+
+const reiniciar = document.getElementById("reiniciar");
+let armado = false;
+reiniciar.addEventListener("click", () => {
+  if (!armado) { armado = true; reiniciar.textContent = "Toca otra vez para borrar tu avance"; setTimeout(() => { armado = false; reiniciar.textContent = "Empezar de nuevo"; }, 4000); return; }
+  st = { vistos:[], checks:{}, abierta:0 }; guardar(); armado = false; reiniciar.textContent = "Empezar de nuevo"; pintar();
+});
+
+pintar();
+</script>
+
+</body>
+</html>
